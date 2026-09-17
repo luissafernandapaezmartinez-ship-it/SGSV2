@@ -1,3 +1,4 @@
+# Extraído a services/salones. El monolito ya no registra este blueprint.
 from flask import Blueprint, request, jsonify
 from services.salon_service import SalonService
 

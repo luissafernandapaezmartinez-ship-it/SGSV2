@@ -19,15 +19,15 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 # Importar y Registrar Controladores (Blueprints)
 from controllers.usuario_controller import usuario_bp
 from controllers.reserva_controller import reserva_bp
-from controllers.salon_controller import salon_bp
 from controllers.docente_controller import docente_bp
 from controllers.rol_controller import rol_bp
 
 app.register_blueprint(usuario_bp, url_prefix='/api')
 app.register_blueprint(reserva_bp, url_prefix='/api')
-app.register_blueprint(salon_bp, url_prefix='/api')
 app.register_blueprint(docente_bp, url_prefix='/api')
 app.register_blueprint(rol_bp, url_prefix='/api')
+
+# ms-salones ya no vive aquí: el API Gateway rutea /api/salones al microservicio.
 
 # --- SERVICIO DE PÁGINAS FRONTEND ---
 @app.route('/')

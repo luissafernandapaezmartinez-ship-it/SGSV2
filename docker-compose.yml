@@ -1,0 +1,28 @@
+services:
+  gateway:
+    build: ./gateway
+    container_name: sgs-gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - monolito
+      - salones
+
+  monolito:
+    build: .
+    container_name: sgs-monolito
+    ports:
+      - "5000:5000"
+
+  salones:
+    build: ./services/salones
+    container_name: sgs-ms-salones
+    ports:
+      - "5002:5002"
+
+  # Cómo probar mañana:
+  #   docker compose up --build
+  #   http://localhost:8080                -> app completa (pasa por el gateway)
+  #   http://localhost:8080/gateway/health -> ruteo del API gateway
+  #   http://localhost:5002/health         -> ms-salones vivo por su cuenta
+  #   http://localhost:5000/api/salones    -> ya NO existe en el monolito
