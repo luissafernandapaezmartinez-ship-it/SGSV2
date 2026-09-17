@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGS - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .sidebar-item { transition: all 0.2s; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; font-size: 14px; color: #94a3b8; }
+        .sidebar-item:hover { background-color: #1e293b; color: white; }
+        .sidebar-active { background-color: #2563eb !important; color: white !important; }
+        .modal-bg { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+        .restringido { display: none !important; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR (Controlado por RBAC) -->
+    <aside class="w-64 bg-[#0f172a] flex flex-col shrink-0 shadow-2xl">
+        <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+            <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg"><i class="fas fa-university"></i></div>
+            <span class="text-white font-bold text-sm">Sistema de Salones</span>
+        </div>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <div onclick="mostrarSeccion('dashboard')" id="nav-dashboard" class="sidebar-item sidebar-active">
+                <i class="fas fa-th-large w-5"></i> Dashboard
+            </div>
+            <div onclick="mostrarSeccion('salones')" id="nav-salones" class="sidebar-item">
+                <i class="fas fa-door-open w-5"></i> Gestión de Salones
+            </div>
+            <div onclick="mostrarSeccion('reservas_globales')" id="nav-reservas" class="sidebar-item">
+                <i class="fas fa-calendar-check w-5"></i> Reservas Globales
+            </div>
+            <div onclick="mostrarSeccion('docentes')" id="nav-docentes" class="sidebar-item">
+                <i class="fas fa-user-graduate w-5"></i> Lista de Docentes
+            </div>
+            <div onclick="mostrarSeccion('roles')" id="nav-roles" class="sidebar-item text-orange-400">
+                <i class="fas fa-users-cog w-5"></i> Control de Roles
+            </div>
+            
+            <div class="pt-6 pb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 border-t border-slate-800 mt-6">Cuenta</div>
+            <div onclick="cerrarSesion()" class="sidebar-item text-red-400 hover:bg-red-500/10">
+                <i class="fas fa-sign-out-alt w-5"></i> Cerrar Sesión (US-20)
+            </div>
+        </nav>
+    </aside>
+
+    <!-- ÁREA DE CONTENIDO -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+            <h2 id="titulo-seccion" class="text-lg font-bold text-slate-800">Panel Principal</h2>
+            <div class="flex items-center gap-5">
+                <button id="btn-accion-principal" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-5 rounded-xl shadow-lg transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> NUEVA ACCIÓN
+                </button>
+                <div class="flex items-center gap-3 pl-5 border-l border-slate-200 text-right">
+                    <div>
+                        <p id="user-display-name" class="text-sm font-bold text-slate-700 leading-tight">--</p>
+                        <p id="user-display-role" class="text-[10px] text-slate-400 uppercase font-black">ROL</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-8 space-y-8">
+            <!-- Estadísticas US-22 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="seccion-stats">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Registros en Sección</p>
+                    <h3 id="stat-reservas" class="text-3xl font-black text-slate-800">--</h3>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Estado</p>
+                    <h3 class="text-green-500 font-bold flex items-center gap-2 text-sm"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Sistema en línea (Supabase)</h3>
+                </div>
+            </div>
+
+            <!-- Tabla Maestra (Cubre todas las consultas del PDF) -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 border-b flex justify-between items-center bg-white">
+                    <h4 id="tabla-titulo" class="text-xs font-black text-slate-400 uppercase tracking-widest">Listado de Datos</h4>
+                    <button onclick="recargarSeccionActual()" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead id="tabla-head" class="bg-slate-50/50 text-[10px] uppercase text-slate-400 font-black tracking-widest"></thead>
+                        <tbody id="tabla-body" class="text-sm divide-y divide-slate-50">
+                            <tr><td colspan="5" class="p-20 text-center text-slate-300 italic">Conectando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Gráfico US-21 (Oculto para Docentes) -->
+            <div id="seccion-grafico" class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                <h4 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-widest">Estadísticas de Uso</h4>
+                <div class="h-[250px]"><canvas id="reservasChart"></canvas></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL MAESTRO DINÁMICO (Para crear cualquier registro) -->
+    <div id="modalMaestro" class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-[2rem] w-full max-w-md shadow-2xl">
+            <h3 id="modal-titulo" class="text-xl font-black text-slate-800 tracking-tight mb-6">Formulario</h3>
+            <form id="formMaestro" class="space-y-4">
+                <div id="campos-dinamicos" class="space-y-4">
+                    <!-- JS inyectará campos aquí -->
+                </div>
+                <div class="flex flex-col gap-3 pt-8">
+                    <button type="submit" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition">GUARDAR CAMBIOS</button>
+                    <button type="button" onclick="cerrarModal()" class="w-full py-2 text-slate-400 font-bold text-xs hover:text-slate-600 transition">CANCELAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../static/js/dashboard.js"></script>
+</body>
+</html>

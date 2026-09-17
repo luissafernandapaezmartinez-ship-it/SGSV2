@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGS - Acceso al Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>.hidden { display: none !important; }</style>
+</head>
+<body class="bg-[#0f172a] h-screen flex items-center justify-center font-sans">
+    <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-[400px]">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white font-bold shadow-lg">SGS</div>
+            <h1 id="title" class="text-3xl font-black text-slate-800 tracking-tighter">Bienvenido</h1>
+            <p id="subtitle" class="text-slate-400 text-sm">Ingresa tus credenciales</p>
+        </div>
+
+        <!-- FORMULARIO DE INICIO DE SESIÓN (US-01) -->
+        <form id="loginForm" class="space-y-4">
+            <input type="email" id="l-email" placeholder="Correo electrónico" required class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+            <input type="password" id="l-pass" placeholder="Contraseña" required class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition transform active:scale-95">Entrar al Sistema</button>
+            <p class="text-center text-xs text-slate-500">¿No tienes cuenta? <a href="javascript:toggle()" class="text-blue-600 font-bold underline">Regístrate ahora</a></p>
+        </form>
+
+        <!-- FORMULARIO DE REGISTRO (US-03, 08, 09, 13) -->
+        <form id="registerForm" class="hidden space-y-4">
+            <input type="text" id="r-nombre" placeholder="Nombre completo" required class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+            <input type="email" id="r-email" placeholder="Correo electrónico" required class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+            <input type="password" id="r-pass" placeholder="Crear contraseña" required class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+            <select id="r-rol" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none bg-white">
+                <option value="1">Administrador</option>
+                <option value="2">Operativo / Operador</option>
+                <option value="3">Docente</option>
+            </select>
+            <button type="submit" class="w-full bg-green-600 text-white font-bold py-4 rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 transition transform active:scale-95">Crear Cuenta Nueva</button>
+            <p class="text-center text-xs text-slate-500">¿Ya tienes cuenta? <a href="javascript:toggle()" class="text-blue-600 font-bold underline">Inicia sesión</a></p>
+        </form>
+    </div>
+
+    <script>
+        const API = window.location.origin + "/api";
+
+        function toggle() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('registerForm').classList.toggle('hidden');
+            const isReg = !document.getElementById('registerForm').classList.contains('hidden');
+            document.getElementById('title').innerText = isReg ? "Nueva Cuenta" : "Bienvenido";
+            document.getElementById('subtitle').innerText = isReg ? "Crea tu perfil con un rol" : "Ingresa tus credenciales";
+        }
+
+        // LÓGICA LOGIN
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API}/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    sessionStorage.setItem('user', JSON.stringify(result.user));
+                    window.location.href = 'index.html';
+                } else { alert("Error: " + result.message); }
+            } catch (err) { alert("Fallo de red: El servidor Python está apagado."); }
+        };
+
+        // LÓGICA REGISTRO
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('r-nombre').value,
+                email: document.getElementById('r-email').value,
+                password: document.getElementById('r-pass').value,
+                id_rol: document.getElementById('r-rol').value
+            };
+            try {
+                const res = await fetch(`${API}/usuarios`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                alert(result.message);
+                if (res.ok) toggle();
+            } catch (err) { alert("Error al conectar para el registro."); }
+        };
+    </script>
+</body>
+</html>
